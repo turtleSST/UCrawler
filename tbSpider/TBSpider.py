@@ -9,7 +9,7 @@ def open_chrome(user_port):
         print('Port' + str(user_port) + 'is using')
         user_port += 1
         find_port = os.popen('netstat -ano|findstr {}'.format(user_port)).read()
-    os.system('start chrome.exe --remote-debugging-port={} --user-data-dir="D:\\Things\\spider\\tbspider\\chrome"'.format(user_port))
+    os.system('start chrome.exe --remote-debugging-port={} --user-data-dir="D:\\Things\\spider\\UCrawler\\tbSpider\\chrome"'.format(user_port))
     print('Using port ', user_port)
 
 class ItemClass:
@@ -18,9 +18,10 @@ class ItemClass:
         self.dataDir = dataDir
         self.user_port = user_port
         self.web = web
+        self.failure = []
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:{}".format(self.user_port))
-        chrome_driver = "D:\\Things\\spider\\tbspider\\chromedriver.exe"
+        chrome_driver = "D:\\Things\\spider\\UCrawler\\tbSpider\\chromedriver.exe"
         try:
             self.Chrome = webdriver.Chrome(chrome_driver, options=chrome_options)
         except Exception as e:
@@ -53,7 +54,7 @@ class ItemClass:
             #     print(err)
             # time.sleep(1)
     
-    def download_video(self, folder):
+    def download_video(self, folder, row, col):
         self.Chrome.execute_script("var q=document.documentElement.scrollTop=0")
         tb_booth = self.Chrome.find_element_by_xpath('//*[@id="J_DetailMeta"]/div[1]/div[2]/div[1]')
         flag = False
@@ -74,6 +75,7 @@ class ItemClass:
             src = tb_booth.find_element_by_xpath('.//video/source').get_attribute('src')
         except NoSuchElementException as e:
             print(e)
+            self.failure.append((row, col))
             return
         print("Downloading video from " + src)
         header = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36"}
@@ -121,12 +123,21 @@ class ItemClass:
         tb_sku = self.Chrome.find_element_by_xpath('//*[@id="J_DetailMeta"]/div[1]/div[1]/div/div[4]/div/div')
         props = tb_sku.find_elements_by_xpath('.//dl[contains(@class, "tb-prop tm-sale-prop")]')
         propNum = len(props)
+        if propNum == 0:
+            title = self.Chrome.find_element_by_xpath('//div[@class="tb-detail-hd"]/h1').text
+            price = self.Chrome.find_element_by_xpath('//dl[contains(@class, "tm-price-panel")]/dd/span').text
+            m[title] = price
+            return m
         if propNum == 1:
             c = props[0].find_element_by_xpath('.//ul[contains(@class, "tm-clear J_TSaleProp")]')
             choices = c.find_elements_by_xpath('.//li')
             for choice in choices:
                 title = choice.get_attribute('title')
-                choice.find_element_by_xpath('.//a').click()
+                try:
+                    choice.find_element_by_xpath('.//a').click()
+                except ElementNotInteractableException as e:
+                    print(e)
+                    continue
                 price = self.Chrome.find_element_by_xpath('//dl[contains(@class, "tm-price-panel")]/dd/span').text
                 m[title] = price
             return m
@@ -162,9 +173,12 @@ class ItemClass:
         time.sleep(0.5)
         print("Browsing " + self.url_keyword['folderName'] + "'s shop")
         self.scrolldown(2)
-        targetElem = self.Chrome.find_elements_by_xpath('//div[@class="item5line1"]')
+        targetElem = self.Chrome.find_elements_by_xpath('//div[@class="item5line1"]')[:9]
         self.scrolldown(5)
+        row = 1
+        col = 1
         for i in targetElem:
+            col = 1
             for j in i.find_elements_by_xpath('.//dl[contains(@class,"item")]'):
                 j.find_element_by_xpath('.//dd[@class="detail"]/a').click()
                 time.sleep(3)
@@ -178,7 +192,7 @@ class ItemClass:
                     pass
                 d = (self.dataDir + title).replace('/', '_')
                 pathlib.Path(d).mkdir(exist_ok = True)
-                self.download_video(d)
+                self.download_video(d, row, col)
                 price = self.getDetailPrice()
                 print("Title: " + title)
                 print("Price: " + str(price))
@@ -227,10 +241,15 @@ class ItemClass:
                                 with open(file_name, 'wb') as f:
                                     f.write(img_data.content)
                 if self.web == 2:
-                    time.sleep(3)
+                    time.sleep(4)
                 self.Chrome.close()
                 self.Chrome.switch_to.window(self.Chrome.window_handles[-1])
+                col += 1
             self.scrolldown(1)
+            row += 1
+        print("Row = " + str(row) + ", Col = " + str(col))
+        print("Video download failure " + str(len(self.failure)))
+        print(self.failure)
     
 
     def start(self):
