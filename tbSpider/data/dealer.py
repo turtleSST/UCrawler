@@ -1,4 +1,5 @@
-import os, json
+import os, json, csv
+from typing import KeysView
 
 def tojson(brands):
     targets = ['aNueNue']
@@ -55,7 +56,31 @@ def getDetailTags(brands):
     with open('detailTags.json', 'w', encoding='utf-8') as f:
         json.dump(res, f, ensure_ascii=False)
 
+def tocsv(fileName):
+    l = fileName.split('.')[0]
+    with open(fileName, 'r', encoding='utf-8') as f:
+        jf = json.load(f)
+    with open(l + '.csv', 'w', encoding='utf-8-sig', newline='') as f:
+        keys = jf.keys()
+        values = jf.values()
+        max = 0
+        for value in values:
+            if len(value) > max:
+                max = len(value)
+        writer = csv.writer(f)
+        writer.writerow(keys)
+        for i in range(max):
+            t = []
+            for value in values:
+                try:
+                    nv = value[i]
+                    t.append(nv)
+                except IndexError as e:
+                    t.append(' ')
+            writer.writerow(t)
+
 brands = [o for o in os.listdir('.') if os.path.isdir(o)]
-print("Brands: " + str(brands))
-getDetailTags(brands)
+# print("Brands: " + str(brands))
+# getDetailTags(brands)
 # tojson(brands)
+tocsv('detailTags.json')
