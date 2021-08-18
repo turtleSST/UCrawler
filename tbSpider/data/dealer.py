@@ -3,52 +3,59 @@ import os, json
 def tojson(brands):
     targets = ['aNueNue']
     for brand in brands:
-        if brand in targets:
-            goods = os.listdir(brand)
-    for good in goods:
-        folder = brand + '\\' + good + '\\'
-        with open(folder + 'msg.json', 'r', encoding='utf-8') as f:
-            details = json.load(f)
-        m = {}
-        m['价格'] = details[0]
-        for i in details[1:]:
-            content = i.split(':')
-            m[content[0].strip()] = content[1].strip()
-        with open(folder + 'msg.json', 'w', encoding='utf-8') as f:
-            json.dump(m, f, ensure_ascii=False)
-
-def getTags(goods):
-    allTags = []
-    for good in goods:
-        folder = brand + '\\' + good + '\\'
-        with open(folder + 'msg.json', 'r', encoding='utf-8') as f:
-            details = json.load(f)
-        for k in details.keys():
-            if k not in allTags:
-                allTags.append(k)
-    with open('Tags.json', 'w', encoding='utf-8') as f:
-        json.dump(allTags, f, ensure_ascii=False)
-    return allTags
-
-def getDetailTags(goods):
-    tags = getTags(goods)
-    res = {}
-    ignored = ['价格', '品牌', '扬声器个数']
-    for tag in tags:
-        if tag in ignored:
+        if brand not in targets:
             continue
-        res[tag] = []
+        goods = os.listdir(brand)
         for good in goods:
             folder = brand + '\\' + good + '\\'
             with open(folder + 'msg.json', 'r', encoding='utf-8') as f:
                 details = json.load(f)
-            if tag in details.keys():
-                res[tag].append(details[tag])
-    with open('DetailTags.json', 'w', encoding='utf-8') as f:
+            m = {}
+            m['价格'] = details[0]
+            for i in details[1:]:
+                content = i.split(':')
+                m[content[0].strip()] = content[1].strip()
+            with open(folder + 'msg.json', 'w', encoding='utf-8') as f:
+                json.dump(m, f, ensure_ascii=False)
+
+def getTags(brands):
+    allTags = []
+    for brand in brands:
+        goods = os.listdir(brand)
+        for good in goods:
+            folder = brand + '\\' + good + '\\'
+            with open(folder + 'msg.json', 'r', encoding='utf-8') as f:
+                details = json.load(f)
+            for k in details.keys():
+                if k not in allTags:
+                    allTags.append(k)
+    print("Tags: " + str(allTags))
+    with open('tags.json', 'w', encoding='utf-8') as f:
+        json.dump(allTags, f, ensure_ascii=False)
+    return allTags
+
+def getDetailTags(brands):
+    tags = getTags(brands)
+    res = {}
+    choices = ['品牌', '面板材质', '品位', '卷弦器', '指板材质', '背侧板材质', '尺寸', '型号', '价格区间', '颜色', '产地', '材质', '重量']
+    print("Analyzing tags: " + str(choices))
+    for tag in tags:
+        if tag not in choices:
+            continue
+        res[tag] = []
+        for brand in brands:
+            goods = os.listdir(brand)
+            for good in goods:
+                folder = brand + '\\' + good + '\\'
+                with open(folder + 'msg.json', 'r', encoding='utf-8') as f:
+                    details = json.load(f)
+                if tag in details.keys():
+                    if details[tag] not in res[tag]:
+                        res[tag].append(details[tag])
+    with open('detailTags.json', 'w', encoding='utf-8') as f:
         json.dump(res, f, ensure_ascii=False)
 
 brands = [o for o in os.listdir('.') if os.path.isdir(o)]
-for brand in brands:
-    goods = os.listdir(brand)
-getDetailTags(goods)
+print("Brands: " + str(brands))
+getDetailTags(brands)
 # tojson(brands)
