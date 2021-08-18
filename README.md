@@ -8,6 +8,7 @@ Crawler for ukulele
 cmd / powershell中运行
 
 ```powershell
+cd "C:\Program Files\Google\Chrome\Application"
 .\chrome.exe --remote-debugging-port=9555 --user-data-dir="your/own/path"
 ```
 

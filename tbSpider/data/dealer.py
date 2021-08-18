@@ -1,6 +1,10 @@
 import os, json
 
-def tojson(goods):
+def tojson(brands):
+    targets = ['aNueNue']
+    for brand in brands:
+        if brand in targets:
+            goods = os.listdir(brand)
     for good in goods:
         folder = brand + '\\' + good + '\\'
         with open(folder + 'msg.json', 'r', encoding='utf-8') as f:
@@ -43,8 +47,8 @@ def getDetailTags(goods):
     with open('DetailTags.json', 'w', encoding='utf-8') as f:
         json.dump(res, f, ensure_ascii=False)
 
-
 brands = [o for o in os.listdir('.') if os.path.isdir(o)]
 for brand in brands:
     goods = os.listdir(brand)
 getDetailTags(goods)
+# tojson(brands)

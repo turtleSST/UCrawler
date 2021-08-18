@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException, ElementNotInteractableException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException, ElementNotInteractableException, ElementClickInterceptedException
 import time, os, pathlib, requests, json
 
 def open_chrome(user_port):
@@ -59,7 +59,7 @@ class ItemClass:
         tb_booth = self.Chrome.find_element_by_xpath('//*[@id="J_DetailMeta"]/div[1]/div[2]/div[1]')
         flag = False
         try:
-            v = tb_booth.find_element_by_xpath('.//div[@class="tm-video-box"]')
+            tb_booth.find_element_by_xpath('.//div[@class="tm-video-box"]')
             flag = True
         except NoSuchElementException as e:
             print("Video not started, trying to find")
@@ -91,10 +91,9 @@ class ItemClass:
             self.Chrome.execute_script("window.scroll(0,{})".format(y))
             time.sleep(0.2)
 
-    # def click_next(self):
-    #     self.Chrome.execute_script("window.scroll(400,150)")
-    #     self.Chrome.find_element_by_xpath('//a[@title="下一页"]').click()
-    #     time.sleep(1)
+    def click_next(self):
+        self.Chrome.find_element_by_xpath('//a[@title="下一页"]').click()
+        time.sleep(1)
 
     def get_goods(self, web):
         time.sleep(0.5)
@@ -114,6 +113,12 @@ class ItemClass:
             self.Chrome.get(target)
         if web == 2:
             hd.find_element_by_xpath('.//div[@class="banner-box"]/div/div/div/div/div/a[2]').click()
+        if web == 3:
+            target = hd.find_element_by_xpath('.//div[@class="banner-box"]/map/area[3]').get_attribute('href')
+            print(target)
+            self.Chrome.get(target)
+        if web == 4:
+            hd.find_element_by_xpath('.//ul[@class="menu-list"]/li[3]/a').click()
         time.sleep(3)
         self.Chrome.switch_to.window(self.Chrome.window_handles[-1])
 
@@ -163,6 +168,9 @@ class ItemClass:
                         except ElementNotInteractableException as e:
                             print(e)
                             continue
+                        except ElementClickInterceptedException as e:
+                            print(e)
+                            continue
                         price = self.Chrome.find_element_by_xpath('//dl[contains(@class, "tm-price-panel")]/dd/span').text
                         m[title + '_' + size] = price
                         choice2.find_element_by_xpath('.//a').click()
@@ -173,7 +181,12 @@ class ItemClass:
         time.sleep(0.5)
         print("Browsing " + self.url_keyword['folderName'] + "'s shop")
         self.scrolldown(2)
-        targetElem = self.Chrome.find_elements_by_xpath('//div[@class="item5line1"]')[:9]
+        if web == 1 or web == 2:
+            targetElem = self.Chrome.find_elements_by_xpath('//div[@class="item5line1"]')[:9]
+        if web == 3:
+            targetElem = self.Chrome.find_elements_by_xpath('//div[@class="item4line1"]')[:4]
+        if web == 4:
+            targetElem = self.Chrome.find_element_by_xpath('.//div[@class="item3line1"]')
         self.scrolldown(5)
         row = 1
         col = 1
@@ -192,7 +205,8 @@ class ItemClass:
                     pass
                 d = (self.dataDir + title).replace('/', '_')
                 pathlib.Path(d).mkdir(exist_ok = True)
-                self.download_video(d, row, col)
+                if web < 4:
+                    self.download_video(d, row, col)
                 price = self.getDetailPrice()
                 print("Title: " + title)
                 print("Price: " + str(price))
@@ -263,8 +277,8 @@ class ItemClass:
 if __name__ == '__main__':
     user_port = 9555
     open_chrome(user_port)
-    web = 2
-    config = [{'searchName': 'tom尤克里里', 'shopName': 'tom乐器旗舰店', 'folderName': 'TOM'}, {'searchName': 'enya尤克里里', 'shopName': 'enya乐器旗舰店', 'folderName': 'enya'}]
+    web = 4
+    config = [{'searchName': 'tom尤克里里', 'shopName': 'tom乐器旗舰店', 'folderName': 'TOM'}, {'searchName': 'enya尤克里里', 'shopName': 'enya乐器旗舰店', 'folderName': 'enya'}, {'searchName': '彩虹人尤克里里', 'shopName': '彩虹人旗舰店', 'folderName': 'aNueNue'}, {'searchName': '星光流行音乐教室', 'shopName': 'liuzli', 'folderName': 'xingGuang'}]
     dataDir = '.\\data\\' + config[web - 1]['folderName'] + '\\'
     pathlib.Path(dataDir).mkdir(exist_ok = True)
     browser = ItemClass(dataDir, config[web - 1], user_port, web)
